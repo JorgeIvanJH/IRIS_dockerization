@@ -30,13 +30,12 @@ ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
 # Copy the installed Python packages from the builder stage
 COPY --from=builder /install /usr/irissys/mgr/python
 
-# Copy the CSV file from the local machine into the container
-COPY data/diabetes.csv /usr/irissys/mgr/iris_data/diabetes.csv
+# Copy and set permissions for the autoconf script while still root
+COPY iris_autoconf.sh /usr/irissys/iris_autoconf.sh
+RUN chmod +x /usr/irissys/iris_autoconf.sh
 
 # Switch back to the default `irisowner` user
 USER irisowner
-
-
 
 # COMMANDS TO RUN:
     # SETUP DOCKER IMAGE AND CONTAINER

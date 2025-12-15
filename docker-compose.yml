@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   iris:
-    build:
+    build: # How is the image built
       context: . # Path to the directory containing the Dockerfile
       dockerfile: Dockerfile # Name of the Dockerfile
     container_name: iris-experimentation # Name of the container
@@ -11,22 +11,13 @@ services:
       - "52773:52773"  # Management Portal/Web Gateway
     # environment:
     #   - ISC_DATA_DIRECTORY=/dur/iconfig  # Data directory inside the container (outside install dir)
-    # volumes:
-    #   # Persist IRIS data
-    #   - /data/dur:/dur 
-    restart: unless-stopped
+    volumes:
+      - ./data/dur/.:/dur:rw # map host directory to container directory with read-write permissions
+    restart: always # Always restart the container if it stops (unless explicitly stopped)
     healthcheck:
       test: ["CMD", "iris", "session", "iris", "-U", "%SYS", "##class(SYS.Database).GetMountedSize()"] # Health check command
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-# # volumes:
-# #   iris-data:
-#     driver: local
-
-# Commands
-# docker-compose down -v
-# docker system prune -f
-# docker-compose up -d --build
+    command: --after "/usr/irissys/iris_autoconf.sh" # Run autoconf script after startup
