@@ -30,6 +30,10 @@ ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
 # Copy the installed Python packages from the builder stage
 COPY --from=builder /install /usr/irissys/mgr/python
 
+# Your own Python package
+COPY python_utils /usr/irissys/mgr/python/python_utils
+ENV PYTHONPATH=/usr/irissys/mgr/python:${PYTHONPATH}
+
 # Copy and set permissions for the autoconf script while still root
 COPY iris_autoconf.sh /usr/irissys/iris_autoconf.sh
 RUN chmod +x /usr/irissys/iris_autoconf.sh

@@ -12,7 +12,7 @@ services:
     # environment:
     #   - ISC_DATA_DIRECTORY=/dur/iconfig  # Data directory inside the container (outside install dir)
     volumes:
-      - ./data/dur/.:/dur:rw # map host directory to container directory with read-write permissions
+      - ./dur/.:/dur:rw # map host directory to container directory with read-write permissions
     restart: always # Always restart the container if it stops (unless explicitly stopped)
     healthcheck:
       test: ["CMD", "iris", "session", "iris", "-U", "%SYS", "##class(SYS.Database).GetMountedSize()"] # Health check command

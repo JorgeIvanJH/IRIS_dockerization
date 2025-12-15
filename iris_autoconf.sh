@@ -15,7 +15,7 @@ install csvgenpy
 quit
 
 /* Upload csv data to Table Automatically using csvgenpy */
-do ##class(shvarov.csvgenpy.csv).Generate("/dur/mocktable.csv","MockPackage","MockTable")
+do ##class(shvarov.csvgenpy.csv).Generate("/dur/data/mocktable.csv","MockPackage","MockTable")
 
 halt
 EOF
