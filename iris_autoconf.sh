@@ -2,7 +2,6 @@
 set -e
 
 iris session IRIS <<'EOF'
-write "PRINT THIS: SEE MEEE HERE",!
 
 /* Install IPM/ZPM client if you still need that first
    (your original snippet did this already) */
@@ -15,7 +14,7 @@ install csvgenpy
 quit
 
 /* Upload csv data to Table Automatically using csvgenpy */
-do ##class(shvarov.csvgenpy.csv).Generate("/dur/data/mocktable.csv","MockPackage","MockTable")
+do ##class(shvarov.csvgenpy.csv).Generate("/dur/data/mocktable.csv","MockTable","MockPackage")
 
 halt
 EOF

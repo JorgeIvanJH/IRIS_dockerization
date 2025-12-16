@@ -10,7 +10,3 @@ def measure_time_decorator(func):
         elapsed_time = end_time - start_time
         return result, elapsed_time
     return wrapper
-
-def simplefunction():
-    print("Executing simplefunction")
-    return None

@@ -1,4 +1,4 @@
-Class MockPackage.MockData Extends %Persistent
+Class MockPackage.MockDataManager Extends %Persistent
 {
 
 ClassMethod AdjustDataSize(csvpath As %String, numrows As %Integer) [ Language = python ]
@@ -7,7 +7,7 @@ ClassMethod AdjustDataSize(csvpath As %String, numrows As %Integer) [ Language =
     Meant ONLY for testing purposes.
     Adjust the dataframe to have exactly NUM_ROWS rows by repeating or subsampling.
     e.g:
-        do ##class(MockPackage.MockData).AdjustDataSize("/dur/data/healthcare_noshows_appointments.csv",10000)
+        do ##class(MockPackage.MockDataManager).AdjustDataSize("/dur/data/healthcare_noshows_appointments.csv",10000)
     """
     import os
     import pandas as pd
@@ -26,7 +26,7 @@ ClassMethod UpdateTableFromCSV(csvpath As %String, package As %String, tablename
 {
     ; Replace table data with data from CSV file at csvpath.
     ; e.g:
-    ;    do ##class(MockPackage.MockData).UpdateTableFromCSV("/dur/data/healthcare_noshows_appointments.csv","MockPackage","NoShowsAppointments")
+    ;    do ##class(MockPackage.MockDataManager).UpdateTableFromCSV("/dur/data/healthcare_noshows_appointments.csv","MockPackage","NoShowsAppointments")
     set fullClass = package_"."_tablename
     set sql = "DROP TABLE "_fullClass
     write "Dropping table: ",sql,!
