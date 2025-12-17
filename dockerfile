@@ -1,5 +1,5 @@
 # Stage 1: Build stage for installing dependencies
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 
 # Set the working directory
 WORKDIR /app
