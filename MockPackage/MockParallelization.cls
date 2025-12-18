@@ -56,37 +56,24 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
     """
     import iris
     import pandas as pd
+    import json
 
-    # Call the ObjectScript method from Python
-    rows = iris.cls("MockPackage.MockParallelization").DynamicSQL(lowerAge)
+    # 1. Call your ObjectScript method
+    rows = iris.cls("MockPackage.MockParallelization").DynamicSQL()
     py_rows = []
-    size = rows._Size()
-    for i in range(1, size + 1):
-        row = rows._Get(i)   # dynamic object for this row
 
-        py_rows.append({
-            "patientid":     row["patientid"],
-            "appointmentid": row["appointmentid"],
-            "gender":        row["gender"],
-            "scheduledday":  row["scheduledday"],
-            "appointmentday":row["appointmentday"],
-            "age":           row["age"],
-            "neighbourhood": row["neighbourhood"],
-            "scholarship":   row["scholarship"],
-            "hipertension":  row["hipertension"],
-            "diabetes":      row["diabetes"],
-            "alcoholism":    row["alcoholism"],
-            "handcap":       row["handcap"],
-            "sms_received":  row["sms_received"],
-            "showed_up":     row["showed_up"],
-            "date_diff":     row["date_diff"],
-        })
+    # 2. Iterate and convert via JSON to handle binary/special characters
+    for i in range(1, rows._Size() + 1):
+        row = rows._Get(i)
+        if (row is None) or (row == ''):
+            continue
+        # %ToJSON() serializes the IRIS object to a string at the source
+        # json.loads() converts that string into a clean Python dictionary
+        py_row = json.loads(row._ToJSON())
+        py_rows.append(py_row)
 
+    # 3. Create your DataFrame
     df = pd.DataFrame(py_rows)
-
-    # from here you can transform df and call your model
-    # X = <feature engineering>
-    # preds = model.predict(X)
     print(df.head())
 }
 
