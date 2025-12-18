@@ -1,20 +1,6 @@
 Class MockPackage.MockParallelization Extends %Persistent
 {
 
-// Compare every possible parallelization approach possible
-
-// IRIS Native:
-
-//     globals
-
-//     SQL (embedded, dynamic)
-
-// Python (using multiprocessing):
-
-//     pandas.read_sql_query
-
-//     IRIS DB API
-
 Parameter DATACLASS = "Demo.BenchData";
 
 Parameter TABLENAME = "Demo_BenchData";
@@ -106,44 +92,64 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
 
 // ------------------------------- OPTION 2: SQL IN PYTHON --------------------------------
 
-ClassMethod RunInferenceWSQLInPython(lowerAge As %Integer = 0) [ Language = python ]
+ClassMethod RunInferenceWIRISSQL(lowerAge As %Integer = 0) [ Language = python ]
 {
     """
-    Runs inference using SQL query executed directly in Python to fetch data from IRIS database.
+    Runs inference using IRIS SQL from Python to fetch data from IRIS database.
     e.g:
-        do ##class(MockPackage.MockParallelization).RunInferenceWSQLInPython(30)
+        do ##class(MockPackage.MockParallelization).RunInferenceWIRISSQL(30)
     """
-    #; import iris
-    #; import pandas as pd
-    #; sql = iris.cls("MockPackage.NoShowsAppointments")._GetNoShowSQL() # FAULTY
-    #; rs = iris.sql.exec(sql, lowerAge)
-    #; cols = ["patientid","appointmentid","gender","scheduledday","appointmentday",
-    #;         "age","neighbourhood","scholarship","hipertension","diabetes",
-    #;         "alcoholism","handcap","sms_received","showed_up","date_diff"]
-    #; df = pd.DataFrame(rs, columns=cols)
-    #; print(df.head())
+    import iris
+    import pandas as pd
+    # Execute the query directly
+    columns = [
+        'patientid', 'appointmentid', 'gender', 'scheduledday', 
+        'appointmentday', 'age', 'neighbourhood', 'scholarship', 
+        'hipertension', 'diabetes', 'alcoholism', 'handcap', 
+        'sms_received', 'showed_up', 'date_diff'
+    ]
+    query = f"SELECT {', '.join(columns)} FROM MockPackage.NoShowsAppointments"
+    statement = iris.sql.prepare(query)
+    stmt = statement.execute()
+    df = pd.DataFrame(list(stmt), columns=columns)
+    print(df.head())
+}
 
-    import pyodbc
+// ------------------------------- OPTION 3: QUERY USING GLOBALS --------------------------------
+
+ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
+{
+    """
+    Runs inference using direct global access to fetch data from IRIS database.
+    e.g:
+        do ##class(MockPackage.MockParallelization).RunInferenceWGLobals(30)
+    """
+    import iris
     import pandas as pd
 
-    conn_str = (
-        "DRIVER={InterSystems IRIS ODBC35};"
-        "SERVER=localhost;"
-        "PORT=1972;"
-        "DATABASE=USER;"
-        "UID=SuperUser;"
-        "PWD=demo;"
-    )
-    conn = pyodbc.connect(conn_str)
+    data_global = iris.gref("^vCVc.Dvei.1")
+    processed_data = []
 
-    sql = """
-    SELECT 
-    patientid, appointmentid, gender, scheduledday, appointmentday, age, neighbourhood, scholarship, hipertension, diabetes, alcoholism, handcap, sms_received, showed_up, date_diff
-    FROM MockPackage.NoShowsAppointments
-    """
+    # Use the %SYS.Python utility for reliable list conversion
+    py_util = iris.cls("%SYS.Python")
 
-    df = pd.read_sql_query(sql, conn)
-    print(df.dtypes)
+    for key in data_global.keys([]):
+        raw_val = data_global[key]
+        
+        # Correct method to deserialize the binary $List into a Python list
+        python_list = py_util.ToList(raw_val)
+        processed_data.append(python_list)
+
+
+    columns = [
+        'patientid', 'appointmentid', 'gender', 'scheduledday', 
+        'appointmentday', 'age', 'neighbourhood', 'scholarship', 
+        'hipertension', 'diabetes', 'alcoholism', 'handcap', 
+        'sms_received', 'showed_up', 'date_diff'
+    ]
+
+    df = pd.DataFrame(processed_data, columns=columns)
+    print(df.head())
 }
 
 Storage Default
