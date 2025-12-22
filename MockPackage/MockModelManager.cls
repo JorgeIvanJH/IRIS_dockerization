@@ -31,44 +31,9 @@ ClassMethod TrainNoShowsModel(csvPath As %String, modelSavePath As %String) As %
     import gc
     import time
     import datetime
+    from python_utils import utils as utils
 
-    def noshows_data_preprocessing(df: pd.DataFrame):
-
-        df = df.drop(columns=['AppointmentID', 'PatientId'])
-        df = df.astype({
-                    'Gender': 'category',
-                    'Neighbourhood': 'category',
-                    'ScheduledDay': 'datetime64[ns]',
-                    'AppointmentDay': 'datetime64[ns]',
-                    })
-        # DATA PREPARATION (slight difference for LightGBM)
-        date_cols = ["ScheduledDay", "AppointmentDay"]
-
-        # 1. Extract useful components
-        for col in date_cols:
-            df[col + "_year"] = df[col].dt.year
-            df[col + "_month"] = df[col].dt.month
-            df[col + "_day"] = df[col].dt.day
-            df[col + "_dow"] = df[col].dt.dayofweek         # 0=Mon, 6=Sun
-            df[col + "_hour"] = df[col].dt.hour
-            df[col + "_is_weekend"] = (df[col].dt.dayofweek >= 5).astype("int8")
-            
-            # Optional: Part-of-day feature
-            df[col + "_part_of_day"] = pd.cut(
-                df[col].dt.hour,
-                bins=[-1, 6, 12, 17, 24],
-                labels=[0, 1, 2, 3],        # 0=night,1=morning,2=afternoon,3=evening
-                ordered=True
-            ).astype("int8")
-        df = df.drop(columns=date_cols)
-
-        # DROP CATEGORICAL FEATURES (just for now)
-        df = df.drop(columns=["Gender", "Neighbourhood"])
-        df.info()
-
-        y = df["Showed_up"]
-        X = df.drop(columns=["Showed_up"])
-        return X, y
+    
 
     def training_lightgbm(X: pd.DataFrame, y: pd.Series, njobs_model: int, modelsave_path: str):
         # LIGHTGBM DATASET
@@ -114,7 +79,7 @@ ClassMethod TrainNoShowsModel(csvPath As %String, modelSavePath As %String) As %
         bst.save_model(model_save_path)    
 
     df = pd.read_csv(csvPath)
-    X, y = noshows_data_preprocessing(df)
+    X, y = utils.noshows_data_preprocessing(df)
     training_lightgbm(X, y, njobs_model=4, modelsave_path=modelSavePath)
 }
 

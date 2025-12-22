@@ -1,9 +1,7 @@
 Class MockPackage.MockParallelization Extends %Persistent
 {
 
-Parameter DATACLASS = "Demo.BenchData";
-
-Parameter TABLENAME = "Demo_BenchData";
+Parameter MODELPATH = "/dur/models/LightGBM_1620_22122025.txt";
 
 // ------------------------------- OPTION 1: IRIS Dynamic SQL --------------------------------
 
@@ -58,9 +56,10 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
     import pandas as pd
     import json
     from python_utils import utils as utils
+    modelPath = iris.cls("MockPackage.MockParallelization")._GetParameter("MODELPATH")
 
     @utils.measure_time_decorator
-    def dynamic_sql_query(lower_age: int) -> pd.dataframe:
+    def dynamic_sql_query(lower_age: int) -> pd.DataFrame:
         rows = iris.cls("MockPackage.MockParallelization").DynamicSQL(lower_age)
         py_rows = []
         for i in range(1, rows._Size() + 1):
@@ -75,9 +74,11 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
         df = pd.DataFrame(py_rows)
         return df
 
-    df, elapsed_time = dynamic_sql_query(lowerAge)
+    df, query_time = dynamic_sql_query(lowerAge)
     print(df.head())
-    print("Time taken: ", elapsed_time, " seconds")
+    print("Query time: ", query_time, " seconds")
+    ypred, inference_time = utils.inference_pipeline(modelPath, df)
+    print("Inference time: ", inference_time, " seconds")
 }
 
 // ------------------------------- OPTION 2: SQL IN PYTHON --------------------------------
@@ -92,6 +93,7 @@ ClassMethod RunInferenceWIRISSQL(lowerAge As %Integer = 0) [ Language = python ]
     import iris
     import pandas as pd
     from python_utils import utils as utils
+    modelPath = iris.cls("MockPackage.MockParallelization")._GetParameter("MODELPATH")
 
     @utils.measure_time_decorator
     def iris_sql_query(lower_age: int) -> pd.DataFrame:
@@ -107,9 +109,11 @@ ClassMethod RunInferenceWIRISSQL(lowerAge As %Integer = 0) [ Language = python ]
         df = pd.DataFrame(list(stmt), columns=columns)
         return df
 
-    df, elapsed_time = iris_sql_query(lowerAge)
+    df, query_time = iris_sql_query(lowerAge)
     print(df.head())
-    print("Time taken: ", elapsed_time, " seconds")
+    print("Query time: ", query_time, " seconds")
+    ypred, inference_time = utils.inference_pipeline(modelPath, df)
+    print("Inference time: ", inference_time, " seconds")
 }
 
 // ------------------------------- OPTION 3: QUERY USING GLOBALS --------------------------------
@@ -124,6 +128,7 @@ ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
     import iris
     import pandas as pd
     from python_utils import utils as utils
+    modelPath = iris.cls("MockPackage.MockParallelization")._GetParameter("MODELPATH")
 
     @utils.measure_time_decorator
     def iris_global_query(lower_age: int) -> pd.DataFrame:
@@ -149,9 +154,11 @@ ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
         df = pd.DataFrame(processed_data, columns=columns)
         return df
 
-    df, elapsed_time = iris_global_query(lowerAge)
+    df, query_time = iris_global_query(lowerAge)
     print(df.head())
-    print("Time taken: ", elapsed_time, " seconds")
+    print("Query time: ", query_time, " seconds")
+    ypred, inference_time = utils.inference_pipeline(modelPath, df)
+    print("Inference time: ", inference_time, " seconds")
 }
 
 Storage Default
