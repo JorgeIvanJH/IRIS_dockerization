@@ -57,24 +57,27 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
     import iris
     import pandas as pd
     import json
+    from python_utils import utils as utils
 
-    # 1. Call your ObjectScript method
-    rows = iris.cls("MockPackage.MockParallelization").DynamicSQL()
-    py_rows = []
+    @utils.measure_time_decorator
+    def dynamic_sql_query(lower_age: int) -> pd.dataframe:
+        rows = iris.cls("MockPackage.MockParallelization").DynamicSQL(lower_age)
+        py_rows = []
+        for i in range(1, rows._Size() + 1):
+            row = rows._Get(i)
+            if (row is None) or (row == ''):
+                continue
+            # %ToJSON() serializes the IRIS object to a string at the source
+            # json.loads() converts that string into a clean Python dictionary
+            py_row = json.loads(row._ToJSON())
+            py_rows.append(py_row)
 
-    # 2. Iterate and convert via JSON to handle binary/special characters
-    for i in range(1, rows._Size() + 1):
-        row = rows._Get(i)
-        if (row is None) or (row == ''):
-            continue
-        # %ToJSON() serializes the IRIS object to a string at the source
-        # json.loads() converts that string into a clean Python dictionary
-        py_row = json.loads(row._ToJSON())
-        py_rows.append(py_row)
+        df = pd.DataFrame(py_rows)
+        return df
 
-    # 3. Create your DataFrame
-    df = pd.DataFrame(py_rows)
+    df, elapsed_time = dynamic_sql_query(lowerAge)
     print(df.head())
+    print("Time taken: ", elapsed_time, " seconds")
 }
 
 // ------------------------------- OPTION 2: SQL IN PYTHON --------------------------------
@@ -88,18 +91,25 @@ ClassMethod RunInferenceWIRISSQL(lowerAge As %Integer = 0) [ Language = python ]
     """
     import iris
     import pandas as pd
-    # Execute the query directly
-    columns = [
-        'patientid', 'appointmentid', 'gender', 'scheduledday', 
-        'appointmentday', 'age', 'neighbourhood', 'scholarship', 
-        'hipertension', 'diabetes', 'alcoholism', 'handcap', 
-        'sms_received', 'showed_up', 'date_diff'
-    ]
-    query = f"SELECT {', '.join(columns)} FROM MockPackage.NoShowsAppointments"
-    statement = iris.sql.prepare(query)
-    stmt = statement.execute()
-    df = pd.DataFrame(list(stmt), columns=columns)
+    from python_utils import utils as utils
+
+    @utils.measure_time_decorator
+    def iris_sql_query(lower_age: int) -> pd.DataFrame:
+        columns = [
+            'patientid', 'appointmentid', 'gender', 'scheduledday', 
+            'appointmentday', 'age', 'neighbourhood', 'scholarship', 
+            'hipertension', 'diabetes', 'alcoholism', 'handcap', 
+            'sms_received', 'showed_up', 'date_diff'
+        ]
+        query = f"SELECT {', '.join(columns)} FROM MockPackage.NoShowsAppointments WHERE age >= {lower_age}"
+        statement = iris.sql.prepare(query)
+        stmt = statement.execute()
+        df = pd.DataFrame(list(stmt), columns=columns)
+        return df
+
+    df, elapsed_time = iris_sql_query(lowerAge)
     print(df.head())
+    print("Time taken: ", elapsed_time, " seconds")
 }
 
 // ------------------------------- OPTION 3: QUERY USING GLOBALS --------------------------------
@@ -113,30 +123,35 @@ ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
     """
     import iris
     import pandas as pd
+    from python_utils import utils as utils
 
-    data_global = iris.gref("^vCVc.Dvei.1")
-    processed_data = []
+    @utils.measure_time_decorator
+    def iris_global_query(lower_age: int) -> pd.DataFrame:
+        data_global = iris.gref("^vCVc.Dvei.1")
 
-    # Use the %SYS.Python utility for reliable list conversion
-    py_util = iris.cls("%SYS.Python")
+        # Columns of the table in data_global in order
+        columns = [
+            'patientid', 'appointmentid', 'gender', 'scheduledday', 
+            'appointmentday', 'age', 'neighbourhood', 'scholarship', 
+            'hipertension', 'diabetes', 'alcoholism', 'handcap', 
+            'sms_received', 'showed_up', 'date_diff'
+        ]
+        idx_filter = columns.index("age")
+        processed_data = []
+        # Use the %SYS.Python utility for reliable list conversion
+        py_util = iris.cls("%SYS.Python")
+        for key in data_global.keys([]):
+            raw_val = data_global[key]
+            # Correct method to deserialize the binary $List into a Python list
+            python_list = py_util.ToList(raw_val)
+            if python_list[idx_filter] >= lower_age:
+                processed_data.append(python_list)
+        df = pd.DataFrame(processed_data, columns=columns)
+        return df
 
-    for key in data_global.keys([]):
-        raw_val = data_global[key]
-        
-        # Correct method to deserialize the binary $List into a Python list
-        python_list = py_util.ToList(raw_val)
-        processed_data.append(python_list)
-
-
-    columns = [
-        'patientid', 'appointmentid', 'gender', 'scheduledday', 
-        'appointmentday', 'age', 'neighbourhood', 'scholarship', 
-        'hipertension', 'diabetes', 'alcoholism', 'handcap', 
-        'sms_received', 'showed_up', 'date_diff'
-    ]
-
-    df = pd.DataFrame(processed_data, columns=columns)
+    df, elapsed_time = iris_global_query(lowerAge)
     print(df.head())
+    print("Time taken: ", elapsed_time, " seconds")
 }
 
 Storage Default
