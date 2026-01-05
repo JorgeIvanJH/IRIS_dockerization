@@ -21,8 +21,8 @@ ClassMethod ConsistencyCheck(lowerAge As %Integer = 0) [ Language = python ]
 
     df_prev = None
     for method in methods:
-        df = method(lowerAge)
         print(f"Getting data using {method.__name__}")
+        df = method(lowerAge)
         if df_prev is None:
             df_prev = df
             continue
