@@ -1,4 +1,4 @@
-Class MockPackage.MockParallelization Extends %Persistent
+Class MockPackage.MockInference Extends %Persistent
 {
 
 Parameter MODELPATH = "/dur/models/LightGBM_1620_22122025.txt";
@@ -9,7 +9,7 @@ ClassMethod DynamicSQL(lowerAge As %Integer = 0) As %String
 {
     ; Execute a dynamic SQL query to retrieve rows from NoShowsAppointments table where age >= lowerAge
     ; e.g:
-    ;    set results = ##class(MockPackage.MockParallelization).DynamicSQL(30)
+    ;    set results = ##class(MockPackage.MockInference).DynamicSQL(30)
     set statement = "SELECT patientid, appointmentid, gender, scheduledday, appointmentday, age, neighbourhood, scholarship, hipertension, diabetes, alcoholism, handcap, sms_received, showed_up, date_diff FROM MockPackage.NoShowsAppointments WHERE age >= ?"
     set objSql = ##class(%SQL.Statement).%New()
     set status = objSql.%Prepare(statement)
@@ -50,17 +50,17 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
     """
     Runs inference using dynamic SQL query to fetch data from IRIS database.
     e.g:
-        do ##class(MockPackage.MockParallelization).RunInferenceWDynamicSQL(30)
+        do ##class(MockPackage.MockInference).RunInferenceWDynamicSQL(30)
     """
     import iris
     import pandas as pd
     import json
     from python_utils import utils as utils
-    modelPath = iris.cls("MockPackage.MockParallelization")._GetParameter("MODELPATH")
+    modelPath = iris.cls("MockPackage.MockInference")._GetParameter("MODELPATH")
 
     @utils.measure_time_decorator
     def dynamic_sql_query(lower_age: int) -> pd.DataFrame:
-        rows = iris.cls("MockPackage.MockParallelization").DynamicSQL(lower_age)
+        rows = iris.cls("MockPackage.MockInference").DynamicSQL(lower_age)
         py_rows = []
         for i in range(1, rows._Size() + 1):
             row = rows._Get(i)
@@ -88,12 +88,12 @@ ClassMethod RunInferenceWIRISSQL(lowerAge As %Integer = 0) [ Language = python ]
     """
     Runs inference using IRIS SQL from Python to fetch data from IRIS database.
     e.g:
-        do ##class(MockPackage.MockParallelization).RunInferenceWIRISSQL(30)
+        do ##class(MockPackage.MockInference).RunInferenceWIRISSQL(30)
     """
     import iris
     import pandas as pd
     from python_utils import utils as utils
-    modelPath = iris.cls("MockPackage.MockParallelization")._GetParameter("MODELPATH")
+    modelPath = iris.cls("MockPackage.MockInference")._GetParameter("MODELPATH")
 
     @utils.measure_time_decorator
     def iris_sql_query(lower_age: int) -> pd.DataFrame:
@@ -123,12 +123,12 @@ ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
     """
     Runs inference using direct global access to fetch data from IRIS database.
     e.g:
-        do ##class(MockPackage.MockParallelization).RunInferenceWGLobals(30)
+        do ##class(MockPackage.MockInference).RunInferenceWGLobals(30)
     """
     import iris
     import pandas as pd
     from python_utils import utils as utils
-    modelPath = iris.cls("MockPackage.MockParallelization")._GetParameter("MODELPATH")
+    modelPath = iris.cls("MockPackage.MockInference")._GetParameter("MODELPATH")
 
     @utils.measure_time_decorator
     def iris_global_query(lower_age: int) -> pd.DataFrame:
@@ -163,16 +163,16 @@ ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
 
 Storage Default
 {
-<Data name="MockParallelizationDefaultData">
+<Data name="MockInferenceDefaultData">
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>
 </Data>
-<DataLocation>^MockPackage.MockParalle6DEFD</DataLocation>
-<DefaultData>MockParallelizationDefaultData</DefaultData>
-<IdLocation>^MockPackage.MockParalle6DEFD</IdLocation>
-<IndexLocation>^MockPackage.MockParalle6DEFI</IndexLocation>
-<StreamLocation>^MockPackage.MockParalle6DEFS</StreamLocation>
+<DataLocation>^MockPackage.MockInferenceD</DataLocation>
+<DefaultData>MockInferenceDefaultData</DefaultData>
+<IdLocation>^MockPackage.MockInferenceD</IdLocation>
+<IndexLocation>^MockPackage.MockInferenceI</IndexLocation>
+<StreamLocation>^MockPackage.MockInferenceS</StreamLocation>
 <Type>%Storage.Persistent</Type>
 }
 

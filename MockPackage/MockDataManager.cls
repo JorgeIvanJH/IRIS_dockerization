@@ -4,8 +4,9 @@ Class MockPackage.MockDataManager Extends %Persistent
 ClassMethod AdjustDataSize(csvpath As %String, numrows As %Integer) [ Language = python ]
 {
     """
+    Takes CSV from csvpath and adjusts its size to have exactly numrows rows.
+    New CSV is saved in the same directory with suffix _nr{numrows} before file extension.
     Meant ONLY for testing purposes.
-    Adjust the dataframe to have exactly NUM_ROWS rows by repeating or subsampling.
     e.g:
         do ##class(MockPackage.MockDataManager).AdjustDataSize("/dur/data/healthcare_noshows_appointments.csv",10000)
     """

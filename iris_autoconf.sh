@@ -13,8 +13,9 @@ repo -r -n registry -url https://pm.community.intersystems.com/ -user "" -pass "
 install csvgenpy
 quit
 
-/* Upload csv data to Table Automatically using csvgenpy */
-do ##class(shvarov.csvgenpy.csv).Generate("/dur/data/healthcare_noshows_appointments.csv","NoShowsAppointments","MockPackage")
+/* Upload csv data ONCE to Table Automatically using csvgenpy */
+SET exists = ##class(%SYSTEM.SQL.Schema).TableExists("MockPackage.NoShowsAppointments")
+IF 'exists {   do ##class(shvarov.csvgenpy.csv).Generate("/dur/data/healthcare_noshows_appointments.csv","NoShowsAppointments","MockPackage")   }
 
 halt
 EOF
