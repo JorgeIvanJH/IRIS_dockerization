@@ -3,6 +3,35 @@ Class MockPackage.MockInference Extends %Persistent
 
 Parameter MODELPATH = "/dur/models/LightGBM_1620_22122025.txt";
 
+// ------------------------- CONSISTENCY CHECK AMONG QUERY METHODS --------------------------------
+
+ClassMethod ConsistencyCheck(lowerAge As %Integer = 0) [ Language = python ]
+{
+    """
+    Compares outputs from the three different query methods to ensure they return the same data.
+    e.g:
+        do ##class(MockPackage.MockInference).ConsistencyCheck(30)
+    """
+    import pandas as pd
+    from python_utils import querymethods as querymethods
+
+    methods = [querymethods.dynamic_sql_query, 
+                querymethods.iris_sql_query, 
+                querymethods.iris_global_query]
+
+    df_prev = None
+    for method in methods:
+        df = method(lowerAge)
+        print(f"Getting data using {method.__name__}")
+        if df_prev is None:
+            df_prev = df
+            continue
+        pd.testing.assert_frame_equal(df, df_prev) # ASSERT EQUALITY OF DATAFRAMES AMONG METHODS
+        print(f"Data from method {method.__name__} is consistent with previous method.")
+        df_prev = df
+    print("All query methods returned consistent data.")
+}
+
 // ------------------------------- OPTION 1: IRIS Dynamic SQL --------------------------------
 
 ClassMethod DynamicSQL(lowerAge As %Integer = 0) As %String
@@ -56,26 +85,14 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
     import pandas as pd
     import json
     from python_utils import utils as utils
+    from python_utils import querymethods as querymethods
     modelPath = iris.cls("MockPackage.MockInference")._GetParameter("MODELPATH")
-
-    @utils.measure_time_decorator
-    def dynamic_sql_query(lower_age: int) -> pd.DataFrame:
-        rows = iris.cls("MockPackage.MockInference").DynamicSQL(lower_age)
-        py_rows = []
-        for i in range(1, rows._Size() + 1):
-            row = rows._Get(i)
-            if (row is None) or (row == ''):
-                continue
-            # %ToJSON() serializes the IRIS object to a string at the source
-            # json.loads() converts that string into a clean Python dictionary
-            py_row = json.loads(row._ToJSON())
-            py_rows.append(py_row)
-
-        df = pd.DataFrame(py_rows)
-        return df
-
-    df, query_time = dynamic_sql_query(lowerAge)
+    time_decorator = utils.measure_time_decorator
+    query_method = querymethods.dynamic_sql_query
+    decorated_query = time_decorator(query_method)
+    df, query_time = decorated_query(lowerAge)
     print(df.head())
+    print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
     print("Query time: ", query_time, " seconds")
     ypred, inference_time = utils.inference_pipeline(modelPath, df)
     print("Inference time: ", inference_time, " seconds")
@@ -93,24 +110,14 @@ ClassMethod RunInferenceWIRISSQL(lowerAge As %Integer = 0) [ Language = python ]
     import iris
     import pandas as pd
     from python_utils import utils as utils
+    from python_utils import querymethods as querymethods
     modelPath = iris.cls("MockPackage.MockInference")._GetParameter("MODELPATH")
-
-    @utils.measure_time_decorator
-    def iris_sql_query(lower_age: int) -> pd.DataFrame:
-        columns = [
-            'patientid', 'appointmentid', 'gender', 'scheduledday', 
-            'appointmentday', 'age', 'neighbourhood', 'scholarship', 
-            'hipertension', 'diabetes', 'alcoholism', 'handcap', 
-            'sms_received', 'showed_up', 'date_diff'
-        ]
-        query = f"SELECT {', '.join(columns)} FROM MockPackage.NoShowsAppointments WHERE age >= {lower_age}"
-        statement = iris.sql.prepare(query)
-        stmt = statement.execute()
-        df = pd.DataFrame(list(stmt), columns=columns)
-        return df
-
-    df, query_time = iris_sql_query(lowerAge)
+    time_decorator = utils.measure_time_decorator
+    query_method = querymethods.iris_sql_query
+    decorated_query = time_decorator(query_method)
+    df, query_time = decorated_query(lowerAge)
     print(df.head())
+    print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
     print("Query time: ", query_time, " seconds")
     ypred, inference_time = utils.inference_pipeline(modelPath, df)
     print("Inference time: ", inference_time, " seconds")
@@ -128,34 +135,14 @@ ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
     import iris
     import pandas as pd
     from python_utils import utils as utils
+    from python_utils import querymethods as querymethods
     modelPath = iris.cls("MockPackage.MockInference")._GetParameter("MODELPATH")
-
-    @utils.measure_time_decorator
-    def iris_global_query(lower_age: int) -> pd.DataFrame:
-        data_global = iris.gref("^vCVc.Dvei.1")
-
-        # Columns of the table in data_global in order
-        columns = [
-            'patientid', 'appointmentid', 'gender', 'scheduledday', 
-            'appointmentday', 'age', 'neighbourhood', 'scholarship', 
-            'hipertension', 'diabetes', 'alcoholism', 'handcap', 
-            'sms_received', 'showed_up', 'date_diff'
-        ]
-        idx_filter = columns.index("age")
-        processed_data = []
-        # Use the %SYS.Python utility for reliable list conversion
-        py_util = iris.cls("%SYS.Python")
-        for key in data_global.keys([]):
-            raw_val = data_global[key]
-            # Correct method to deserialize the binary $List into a Python list
-            python_list = py_util.ToList(raw_val)
-            if python_list[idx_filter] >= lower_age:
-                processed_data.append(python_list)
-        df = pd.DataFrame(processed_data, columns=columns)
-        return df
-
-    df, query_time = iris_global_query(lowerAge)
+    time_decorator = utils.measure_time_decorator
+    query_method = querymethods.iris_global_query
+    decorated_query = time_decorator(query_method)
+    df, query_time = decorated_query(lowerAge)
     print(df.head())
+    print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
     print("Query time: ", query_time, " seconds")
     ypred, inference_time = utils.inference_pipeline(modelPath, df)
     print("Inference time: ", inference_time, " seconds")
