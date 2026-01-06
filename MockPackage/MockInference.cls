@@ -90,12 +90,13 @@ ClassMethod RunInferenceWDynamicSQL(lowerAge As %Integer = 0) [ Language = pytho
     time_decorator = utils.measure_time_decorator
     query_method = querymethods.dynamic_sql_query
     decorated_query = time_decorator(query_method)
-    df, query_time = decorated_query(lowerAge)
-    print(df.head())
-    print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
-    print("Query time: ", query_time, " seconds")
+    df, querytime = decorated_query(lowerAge)
+    # print(df.head())
+    # print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
+    # print("Query time: ", querytime, " seconds")
     ypred, inference_time = utils.inference_pipeline(modelPath, df)
-    print("Inference time: ", inference_time, " seconds")
+    # print("Inference time: ", inference_time, " seconds")
+    return {"querytime": querytime, "infertime": inference_time, "numrows": df.shape[0]}
 }
 
 // ------------------------------- OPTION 2: SQL IN PYTHON --------------------------------
@@ -115,12 +116,13 @@ ClassMethod RunInferenceWIRISSQL(lowerAge As %Integer = 0) [ Language = python ]
     time_decorator = utils.measure_time_decorator
     query_method = querymethods.iris_sql_query
     decorated_query = time_decorator(query_method)
-    df, query_time = decorated_query(lowerAge)
-    print(df.head())
-    print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
-    print("Query time: ", query_time, " seconds")
+    df, querytime = decorated_query(lowerAge)
+    # print(df.head())
+    # print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
+    # print("Query time: ", querytime, " seconds")
     ypred, inference_time = utils.inference_pipeline(modelPath, df)
-    print("Inference time: ", inference_time, " seconds")
+    # print("Inference time: ", inference_time, " seconds")
+    return {"querytime": querytime, "infertime": inference_time, "numrows": df.shape[0]}
 }
 
 // ------------------------------- OPTION 3: QUERY USING GLOBALS --------------------------------
@@ -140,12 +142,39 @@ ClassMethod RunInferenceWGLobals(lowerAge As %Integer = 0) [ Language = python ]
     time_decorator = utils.measure_time_decorator
     query_method = querymethods.iris_global_query
     decorated_query = time_decorator(query_method)
-    df, query_time = decorated_query(lowerAge)
-    print(df.head())
-    print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
-    print("Query time: ", query_time, " seconds")
+    df, querytime = decorated_query(lowerAge)
+    # print(df.head())
+    # print("Dataframe shape: ", df.shape[0], " rows and ", df.shape[1], " columns")
+    # print("Query time: ", querytime, " seconds")
     ypred, inference_time = utils.inference_pipeline(modelPath, df)
-    print("Inference time: ", inference_time, " seconds")
+    # print("Inference time: ", inference_time, " seconds")
+    return {"querytime": querytime, "infertime": inference_time, "numrows": df.shape[0]}
+}
+
+ClassMethod RunAllInferences(lowerAge As %Integer = 0, numTimesAv As %Integer = 10) As %Status
+{
+    ; Run all three inference methods and display their times.
+    ; e.g:
+    ;    do ##class(MockPackage.MockInference).RunAllInferences(30)
+
+    Set methods = $ListBuild("RunInferenceWDynamicSQL", "RunInferenceWIRISSQL", "RunInferenceWGLobals")
+    Set className = "MockPackage.MockInference"
+    Set ptr = 0
+    While $ListNext(methods, ptr, methodName) {
+        write "Running inference with method: ", methodName, ":",!
+        set totalInferTime = 0.0
+        set totalQueryTime = 0.0
+        for i=1:1:numTimesAv {
+            set result = $CLASSMETHOD(className, methodName, lowerAge)
+            set totalInferTime = totalInferTime + result."__getitem__"("infertime")
+            set totalQueryTime = totalQueryTime + result."__getitem__"("querytime")
+        }
+        write "     Number of rows processed: ", result."__getitem__"("numrows"),!
+        write "     Average query time over ",numTimesAv," runs: ", totalQueryTime/numTimesAv, " seconds",!
+        write "     Average inference time over ",numTimesAv," runs: ", totalInferTime/numTimesAv, " seconds",!
+    }
+    
+    return 1
 }
 
 Storage Default
