@@ -34,6 +34,9 @@ COPY --from=builder /install /usr/irissys/mgr/python
 COPY python_utils /usr/irissys/mgr/python/python_utils
 ENV PYTHONPATH=/usr/irissys/mgr/python:${PYTHONPATH}
 
+
+# Copy ObjectScript classes into the image TODO UPDATE THIS ALONG WITH THE DOCUMENTATION
+COPY MockPackage /usr/irissys/mgr/MockPackage
 # Copy and set permissions for the autoconf script while still root
 COPY iris_autoconf.sh /usr/irissys/iris_autoconf.sh
 RUN chmod +x /usr/irissys/iris_autoconf.sh

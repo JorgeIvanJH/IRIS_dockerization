@@ -1,0 +1,8 @@
+.csv table downloaded from "https://www.kaggle.com/datasets/wajahat1064/healthcare-appointment-dataset"
+
+file saved in this folder as "healthcare_noshows_appointments.csv"
+
+for ease of data processing, its column names were set to:
+
+    patientid,appointmentid,gender,scheduledday,appointmentday,age,neighbourhood,scholarship,hipertension,diabetes,alcoholism,handcap,sms_received,showed_up,date_diff
+
