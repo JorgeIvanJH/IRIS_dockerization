@@ -18,6 +18,8 @@ Some important highlights that will be addressed in this article are how to:
 
 - Automatically execute IRIS terminal commands as soon as the container starts, which in this scenario is used to:
 
+  - Import custom ObjectScript packages into IRIS.
+
   - Install IPM and, through it, Shavrov’s `csvgenpy` utility  
     (https://community.intersystems.com/post/csvgenpy-import-any-csv-intersystems-iris-using-embedded-python),  
     used to create and populate new tables from a single CSV file.
@@ -158,6 +160,9 @@ COPY --from=builder /install /usr/irissys/mgr/python
 COPY python_utils /usr/irissys/mgr/python/python_utils
 ENV PYTHONPATH=/usr/irissys/mgr/python:${PYTHONPATH}
 
+
+# Copy ObjectScript classes into the image
+COPY MockPackage /usr/irissys/mgr/MockPackage
 # Copy and set permissions for the autoconf script while still root
 COPY iris_autoconf.sh /usr/irissys/iris_autoconf.sh
 RUN chmod +x /usr/irissys/iris_autoconf.sh
@@ -191,6 +196,12 @@ These environment variables achieve what would otherwise be configured manually 
 
 and updating the Embedded Python runtime settings. Defining them in the Dockerfile makes the configuration explicit, reproducible, and version-controlled.
 
+Additionally, the classes inside the package "MockPackage" are copied inside the container through:
+
+`COPY MockPackage /usr/irissys/mgr/MockPackage`
+
+to be later on, automatically imported to IRIS when the the following bash file is executed after the container is up and running.
+
 ### iris_autoconf.sh
 
 ```
@@ -209,6 +220,10 @@ repo -r -n registry -url https://pm.community.intersystems.com/ -user "" -pass "
 install csvgenpy
 quit
 
+/* Import and Compile the MockPackage */
+/* The "ck" flags will Compile and Keep the source */
+Do $system.OBJ.Import("/usr/irissys/mgr/MockPackage", "ck")
+
 /* Upload csv data ONCE to Table Automatically using csvgenpy */
 SET exists = ##class(%SYSTEM.SQL.Schema).TableExists("MockPackage.NoShowsAppointments")
 IF 'exists {   do ##class(shvarov.csvgenpy.csv).Generate("/dur/data/healthcare_noshows_appointments.csv","NoShowsAppointments","MockPackage")   }
@@ -220,7 +235,7 @@ EOF
 
 This is a bash script that is executed inside the container immediately after startup. It opens an IRIS terminal session using `iris session IRIS` and runs IRIS-specific commands to perform additional configuration steps automatically.
 
-These steps include installing IPM (available as `zpm` inside the IRIS terminal), installing IPM packages such as `csvgenpy`, and using `csvgenpy` to load a CSV file mounted into the container at `/dur/data/healthcare_noshows_appointments.csv` to create and populate a corresponding table in IRIS.
+These steps include importing custom packages whose classes were copied inside the container's storage, installing IPM (available as `zpm` inside the IRIS terminal), installing IPM packages such as `csvgenpy`, and using `csvgenpy` to load a CSV file mounted into the container at `/dur/data/healthcare_noshows_appointments.csv` to create and populate a corresponding table in IRIS.
 
 **NOTE:** This script is executed every time the container starts. If this behavior is not considered, it can lead to unintended side effects such as reloading or resetting data. That is why it is important to make the script safe to run multiple times, for example, by checking whether the target table already exists before creating or populating it. This is especially relevant here because the Docker Compose restart policy is set to `restart: always`, meaning the container will automatically restart and re-execute these commands whenever it goes down.
 
@@ -305,7 +320,7 @@ In this formulation:
 
 ### Inference Time
 
-![infer_times](images\infer_times.png)
+![infer_times](images/infer_times.png)
 
 $$
 \begin{aligned}
@@ -340,7 +355,7 @@ Finally, the fitted constant offset $c \approx 0.08$ seconds likely represents a
 
 ### Query Time
 
-![query_times](images\query_times.png)
+![query_times](images/query_times.png)
 
 $$
 \begin{aligned}
