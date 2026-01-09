@@ -322,7 +322,7 @@ In this formulation:
 
 ![infer_times](images/infer_times.png)
 
-$$
+```math
 \begin{aligned}
 \text{DynamicSQL:} &\quad a = 0.00996 \times 10^{-6},\; k = 1.34,\; c = 0.09 \\
 \text{IRISSQL:}    &\quad a = 0.01751 \times 10^{-6},\; k = 1.30,\; c = 0.08 \\
@@ -330,7 +330,7 @@ $$
 
 \text{Average:}    &\quad a = 0.01832 \times 10^{-6},\; k = 1.30,\; c = 0.08
 \end{aligned}
-$$
+```
 
 
 Inference time is very similar across all three query methods, which is expected, as the resulting input DataFrame was verified to be identical in all cases.
@@ -357,13 +357,13 @@ Finally, the fitted constant offset $c \approx 0.08$ seconds likely represents a
 
 ![query_times](images/query_times.png)
 
-$$
+```math
 \begin{aligned}
 \text{DynamicSQL:} &\quad a = 0.00241 \times 10^{-6},\; k = 1.82,\; c = 1.90 \\
 \text{IRISSQL:}    &\quad a = 0.02909 \times 10^{-6},\; k = 1.48,\; c = 0.04 \\
 \text{Globals:}    &\quad a = 4.12700 \times 10^{-6},\; k = 1.03,\; c = -0.02 \\
 \end{aligned}
-$$
+```
 
 
 Query time exhibits substantially different scaling behavior across the three access methods. In contrast to inference time, which is largely independent of the query mechanism, query performance is dominated by the data access strategy and its interaction with storage and execution layers.
