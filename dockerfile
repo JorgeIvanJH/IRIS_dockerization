@@ -39,7 +39,7 @@ ENV PYTHONPATH=/usr/irissys/mgr/python:${PYTHONPATH}
 COPY MockPackage /usr/irissys/mgr/MockPackage
 # Copy and set permissions for the autoconf script while still root
 COPY iris_autoconf.sh /usr/irissys/iris_autoconf.sh
-RUN chmod +x /usr/irissys/iris_autoconf.sh
+RUN sed -i 's/\r$//' /usr/irissys/iris_autoconf.sh && chmod +x /usr/irissys/iris_autoconf.sh
 
 # Switch back to the default `irisowner` user
 USER irisowner
