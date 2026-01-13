@@ -1,5 +1,7 @@
 # IRIS Dockerization and Embedded Python for Data Science
 
+demo: https://www.youtube.com/watch?v=IcShNKQ4jIk
+
 Before joining InterSystems, I worked in a team of web developers as a data scientist. Most of my day-to-day work involved training and embedding ML models in Python-based backend applications through microservices, mainly built with the Django framework and using Postgres SQL for sourcing the data. During development, testing, and deployment, I realized the importance of repeatability of results, both for the model’s inferences and for the performance inside the application, regardless of the hardware being used to run the code.
 
 This naturally went hand in hand with adopting good coding practices, such as modularization to reduce code repeatability and boilerplate, making maintenance easier and speeding up development. For this reason, Docker in particular became an essential tool in our workflow, not only for scalability and ease of deployment, but also to reduce human error and ensure that code behaves the same way everywhere, regardless of the underlying machine.

@@ -6,3 +6,4 @@ for ease of data processing, its column names were set to:
 
     patientid,appointmentid,gender,scheduledday,appointmentday,age,neighbourhood,scholarship,hipertension,diabetes,alcoholism,handcap,sms_received,showed_up,date_diff
 
+I have uploaded a simplified version of the csv for the sake of testing, but feel free to replace it with the entire file pointed above.
